@@ -1,0 +1,81 @@
+*&---------------------------------------------------------------------*
+*& Report  ZOS_GPT_TABLE
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZOS_GPT_TABLE.
+
+TYPE-POOLS: truxs.
+
+PARAMETERS:
+  p_table TYPE string DEFAULT 'MARA'.  
+
+DATA:
+  lv_string       TYPE string,
+  lv_response     TYPE string,
+  lv_payload      TYPE string,
+  lt_bin          TYPE solix_tab,
+  lt_body         TYPE soli_tab,
+  ls_body         TYPE soli.
+
+CONSTANTS:
+  lc_url TYPE string VALUE 'https://api.openai.com/v1/engines/text-davinci-003/completions',
+  lc_api_key TYPE string VALUE 'Bearer APİ KEY'.  "Kendi APİ keyinizi Bearer'dan sonrasına ekleyiniz.
+  
+lv_string = '{ "prompt": "Describe the structure of the SAP table ' && p_table && ' in detail.", "max_tokens": 150 }'.
+
+lv_payload = lv_string.
+
+DATA: lo_http_client TYPE REF TO if_http_client,
+      lv_status      TYPE i,
+      lv_status_code TYPE i.
+
+CALL METHOD cl_http_client=>create_by_url
+  EXPORTING
+    url                = lc_url
+  IMPORTING
+    client             = lo_http_client
+  EXCEPTIONS
+    argument_not_found = 1
+    plugin_not_active  = 2
+    internal_error     = 3
+    OTHERS             = 4.
+
+IF sy-subrc <> 0.
+  WRITE: / 'HTTP Client creation failed'.
+  RETURN.
+ENDIF.
+
+lo_http_client->request->set_method( 'POST' ).
+
+lo_http_client->request->set_header_field( name = 'Content-Type' value = 'application/json' ).
+lo_http_client->request->set_header_field( name = 'Authorization' value = lc_api_key ).
+
+lo_http_client->request->set_cdata( lv_payload ).
+
+CALL METHOD lo_http_client->send
+  EXCEPTIONS
+    http_communication_failure = 1
+    http_invalid_state         = 2
+    http_processing_failed     = 3
+    http_invalid_timeout       = 4
+    OTHERS                     = 5.
+
+IF sy-subrc <> 0.
+  WRITE: / 'HTTP request failed, error code:', sy-subrc.
+  RETURN.
+ENDIF.
+
+CALL METHOD lo_http_client->receive
+  EXCEPTIONS
+    http_communication_failure = 1
+    http_invalid_state         = 2
+    http_processing_failed     = 3
+    OTHERS                     = 5.
+
+IF sy-subrc = 0.
+  lv_response = lo_http_client->response->get_cdata( ).
+  WRITE: / 'Response from OpenAI:', lv_response.
+ELSE.
+  WRITE: / 'HTTP response failed'.
+ENDIF.
