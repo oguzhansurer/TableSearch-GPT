@@ -17,7 +17,7 @@ DATA:
   lt_bin          TYPE solix_tab,
   lt_body         TYPE soli_tab,
   ls_body         TYPE soli.
-
+*CHATGPT API´SİNİ YAZIP TANIMLIYORUZ
 CONSTANTS:
   lc_url TYPE string VALUE 'https://api.openai.com/v1/engines/text-davinci-003/completions',
   lc_api_key TYPE string VALUE 'Bearer APİ KEY'.  "Kendi APİ keyinizi Bearer'dan sonrasına ekleyiniz.
